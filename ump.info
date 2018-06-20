@@ -1,0 +1,9 @@
+name = User Management Pro
+description = "User Management Pro"
+core = 7.x
+
+;dependencies[] = views:views
+;files[] = tests/ump.test
+configure = admin/config/ump
+;stylesheets[all][] = node.css
+;scripts[] = somescript.js
