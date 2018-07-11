@@ -29,19 +29,57 @@ function ump_menu() {
   $items = array();
 
   $items['admin/config/ump'] = array(
-    'title' => 'UMP Configuration',
-    'description' => 'Configuration for User Management Pro module',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('ump_overview_form'),
+      'title' => 'UMP Configuration',
+      'description' => 'Configuration for User Management Pro module',
+      'page callback' => 'system_admin_menu_block_page',
+      'access arguments' => array('access administration pages'),
+      'file' => 'system.admin.inc',
+      'file path' => drupal_get_path('module', 'system'),
+  );  
+  
+  $items['admin/config/ump/overview'] = array(
+    'title' => 'UMP Rules Overview',
+    'description' => 'UMP Rules Overview',
+    'page callback' => 'ump_rules_overview',
     'access arguments' => array('access administration pages'),
     'type' => MENU_NORMAL_ITEM,
     'file' => 'ump.admin.inc',
   );
+  
+  $items['admin/config/ump/rule/create'] = array(
+    'title' => 'UMP Create Rule',
+    'description' => 'UMP Create Rule',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ump_rule_form'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'ump.admin.inc',
+  );  
 
+  $items['admin/config/ump/rule/edit/%'] = array(
+    'title' => 'UMP Edit Rule Configuration',
+    'description' => 'Configuration for User Management Pro module',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ump_rule_form', 5),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'ump.admin.inc',
+  );    
+  
+  $items['admin/config/ump/rule/delete/%'] = array(
+    'title' => 'UMP Delete Rule Configuration',
+    'description' => 'Configuration for User Management Pro module',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ump_rule_delete_form', 5),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'ump.admin.inc',
+  );
+  
   return $items;
 }
 
 function ump_form_alter(&$form, &$form_state, $form_id) {
-  dsm ($form_id);
+  //dsm ($form_id);
 }
 
