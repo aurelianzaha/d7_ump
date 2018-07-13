@@ -3,7 +3,7 @@ description = "User Management Pro"
 core = 7.x
 
 ;dependencies[] = views:views
-;files[] = tests/ump.test
+;files[] = ump.permissions.inc
 configure = admin/config/ump/overvie
 ;stylesheets[all][] = node.css
 ;scripts[] = somescript.js

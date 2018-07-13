@@ -25,7 +25,7 @@ function ump_help($path, $arg) {
 /**
  * Implements hook_menu().
  */
-function ump_menu() {
+function ump_menu() {  
   $items = array();
 
   $items['admin/config/ump'] = array(
@@ -53,7 +53,7 @@ function ump_menu() {
     'page arguments' => array('ump_rule_form'),
     'access arguments' => array('access administration pages'),
     'type' => MENU_NORMAL_ITEM,
-    'file' => 'ump.admin.inc',
+    'file' => 'ump.admin_forms.inc',
   );  
 
   $items['admin/config/ump/rule/edit/%'] = array(
@@ -63,7 +63,7 @@ function ump_menu() {
     'page arguments' => array('ump_rule_form', 5),
     'access arguments' => array('access administration pages'),
     'type' => MENU_NORMAL_ITEM,
-    'file' => 'ump.admin.inc',
+    'file' => 'ump.admin_forms.inc',
   );    
   
   $items['admin/config/ump/rule/delete/%'] = array(
@@ -73,13 +73,65 @@ function ump_menu() {
     'page arguments' => array('ump_rule_delete_form', 5),
     'access arguments' => array('access administration pages'),
     'type' => MENU_NORMAL_ITEM,
-    'file' => 'ump.admin.inc',
+    'file' => 'ump.admin_forms.inc',
   );
   
+  $items['user/%user/ump'] = array(
+    'title' => t('User Management Pro'),
+    'page callback' => 'ump_user_page',
+    'access callback' => 'user_edit_access',
+    'access arguments' => array(1),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'ump.pages.inc',
+    'weight' => 10,
+  );	  
+  
+  $items['ump/people/create'] = array(
+    'title' => 'Add user',
+    'page callback' => 'drupal_goto',
+    'page arguments' => array('admin/people/create'),
+    'access callback' => 'ump_check_permission',
+    'access arguments' => array (2),
+    'type' => MENU_LOCAL_ACTION,
+  );  
+  
   return $items;
+}
+
+/**
+ * Implements hook_menu_alter().
+ */
+function ump_menu_alter(&$items) {
+  $items['admin/people/create']['access callback'] = 'ump_check_permission';
+  $items['admin/people/create']['access arguments'] = array (2);
+  /*$items['user/%user']['access callback'] = 'subuser_access_view_callback';
+  $items['user/%user/cancel']['access callback'] = 'subuser_access_delete_callback';
+  $items['user/%user/cancel/confirm/%/%']['access callback'] = 'subuser_access_delete_callback';
+  $items['user/%user/edit']['access callback'] = 'subuser_access_edit_callback';*/
 }
 
 function ump_form_alter(&$form, &$form_state, $form_id) {
   //dsm ($form_id);
 }
 
+function ump_check_permission ($action) {
+  global $user;
+  if (in_array("administrator", $user->roles)) {
+    return true;
+  }
+  
+  if ($action == "create") {
+    $guids = variable_get("user_management_pro_rules");
+    if (is_array($guids)) {
+      foreach ($guids as $guid) {
+        $rule = variable_get("user_management_pro_".$guid);
+        if (isset($user->roles[$rule["select_role"]])) {
+          if ($rule["allow_to_create_enable"] == 1) {
+            return true;
+          }  
+        }
+      }       
+    }
+    return false;
+  }
+}

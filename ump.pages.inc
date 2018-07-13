@@ -1,14 +1,11 @@
 <?php
 
-function ump_rules_overview () {
+function ump_user_page () {
   $return = "";
   
   $table["header"] = array (
-    "Role",
-    "Allow to create",
-    "Allow to view",
-    "Allow to edit",
-    "Allow to delete",
+    "Name",
+    "Roles",
     "Operations",
   );
   $table["rows"] = array ();
@@ -16,10 +13,9 @@ function ump_rules_overview () {
   $table["caption"] = "";
   $table["colgroups"] = array ();
   $table["sticky"] = true;
-  $table["empty"] = "No rules created yet.";
+  $table["empty"] = "No users found";
   
-  $get_roles = user_roles (TRUE);
-  dsm ($get_roles);
+  /*$get_roles = user_roles (TRUE);
   $field_info_instances = field_info_instances('user', 'user');
   $user_fields = array ();
   foreach ($field_info_instances as $field_info_instance_key => $field_info_instance_value) {
@@ -67,10 +63,12 @@ function ump_rules_overview () {
       );
       array_push($table["rows"], $row);
     }      
-  }
+  }*/
   
   $return .= theme_table($table);
-  $return .= l ('Create Rule', 'admin/config/ump/rule/create');
+  if (ump_check_permission ("create")) {
+    $return .= l ('Create User', 'ump/people/create');
+  }
     
   return $return;
 }
