@@ -102,12 +102,14 @@ function ump_menu() {
  * Implements hook_menu_alter().
  */
 function ump_menu_alter(&$items) {
-  $items['admin/people/create']['access callback'] = 'ump_check_permission';
-  $items['admin/people/create']['access arguments'] = array (2);
+  /*$items['admin/people/create']['access callback'] = 'ump_check_permission';
+  $items['admin/people/create']['access arguments'] = array (2);*/
   /*$items['user/%user']['access callback'] = 'subuser_access_view_callback';
   $items['user/%user/cancel']['access callback'] = 'subuser_access_delete_callback';
   $items['user/%user/cancel/confirm/%/%']['access callback'] = 'subuser_access_delete_callback';
   $items['user/%user/edit']['access callback'] = 'subuser_access_edit_callback';*/
+  
+  chain_menu_access_chain($items, 'admin/people/create', 'ump_check_permission', array('create'), TRUE);
 }
 
 function ump_form_alter(&$form, &$form_state, $form_id) {
@@ -127,11 +129,22 @@ function ump_check_permission ($action) {
         $rule = variable_get("user_management_pro_".$guid);
         if (isset($user->roles[$rule["select_role"]])) {
           if ($rule["allow_to_create_enable"] == 1) {
+            ump_temp_administer_users (true);
             return true;
           }  
         }
       }       
     }
+    ump_temp_administer_users (false);
     return false;
   }
+}
+
+/**
+ * Temporarily override 'administer users' for the duration or processing this page.
+ */
+function ump_temp_administer_users($allow) {
+  global $user;
+  $static = &drupal_static('user_access');
+  $static[$user->uid]['administer users'] = $allow;
 }
