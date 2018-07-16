@@ -19,7 +19,6 @@ function ump_rules_overview () {
   $table["empty"] = "No rules created yet.";
   
   $get_roles = user_roles (TRUE);
-  dsm ($get_roles);
   $field_info_instances = field_info_instances('user', 'user');
   $user_fields = array ();
   foreach ($field_info_instances as $field_info_instance_key => $field_info_instance_value) {

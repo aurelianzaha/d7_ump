@@ -112,10 +112,6 @@ function ump_menu_alter(&$items) {
   chain_menu_access_chain($items, 'admin/people/create', 'ump_check_permission', array('create'), TRUE);
 }
 
-function ump_form_alter(&$form, &$form_state, $form_id) {
-  //dsm ($form_id);
-}
-
 function ump_check_permission ($action) {
   global $user;
   if (in_array("administrator", $user->roles)) {
@@ -135,7 +131,6 @@ function ump_check_permission ($action) {
         }
       }       
     }
-    ump_temp_administer_users (false);
     return false;
   }
 }
@@ -147,4 +142,59 @@ function ump_temp_administer_users($allow) {
   global $user;
   $static = &drupal_static('user_access');
   $static[$user->uid]['administer users'] = $allow;
+}
+
+
+function ump_get_user_rules () {
+  global $user;
+  $rules = array ();
+  $guids = variable_get("user_management_pro_rules");
+  if (is_array($guids)) {
+    foreach ($guids as $guid) {
+      $rule = variable_get("user_management_pro_".$guid);  
+      if (isset($user->roles[$rule["select_role"]])) {
+        array_push($rules, $rule);
+      }
+    }
+  }  
+  return $rules;
+}
+
+function ump_form_alter (&$form, &$form_state, $form_id) {
+  $rules = ump_get_user_rules ();
+  if ($form_id == "user_register_form") {
+    $allow_roles = array ();
+    $add_custom_cusbmit = false;
+    foreach ($rules as $rule) {
+      if ($rule["allow_to_create_enable"] == 1) {
+        array_push($allow_roles, $rule["allow_to_create_role"]);
+        if ($rule["allow_to_create_overtake"] == 1) {
+          $form['#submit'][] = 'ump_user_register_form_submit';
+        } 
+      }
+    }
+    if (count($allow_roles) > 0) {
+      $form['account']['roles']["#access"] = true;
+      foreach ($form['account']['roles']['#options'] as $option_key => $option_value) {
+        if (!in_array($option_key, $allow_roles)) {
+          unset ($form['account']['roles']['#options'][$option_key]);
+        }
+      }
+    }
+  }
+}
+
+function ump_user_register_form_submit ($form, &$form_state) {
+  global $user;
+  $user_profile = entity_metadata_wrapper('user', $user->uid);
+  $rules = ump_get_user_rules ();
+  $new_user = entity_metadata_wrapper('user', $form_state["values"]["uid"]);
+  foreach ($rules as $rule) {
+    if ($rule["allow_to_create_overtake"] == 1) {
+      $field_to_overtake = $rule["allow_to_create_overtake_field"];
+      $field_value = $user_profile->$field_to_overtake->value();
+      $new_user->$field_to_overtake->set($field_value);
+      $new_user->save();
+    }     
+  }
 }
