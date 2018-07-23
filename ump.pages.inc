@@ -18,6 +18,7 @@ function ump_user_page () {
   
   $guids = variable_get("user_management_pro_rules");
   $ump_permissions = ump_get_permissions ();
+  //var_dump ($ump_permissions);
   foreach ($guids as $guid) {
     $rule = variable_get("user_management_pro_".$guid);
     if ($rule["allow_to_view_enable"] == 1) {
@@ -32,14 +33,19 @@ function ump_user_page () {
         $edit = "";
         $delete = "";
 
+        foreach ($load_user->roles as $load_user_key => $load_user_value) {
+          $roles .= $load_user_value."<br>";
+        }
+        
+        //var_dump ($user->roles);
+        //var_dump ($load_user->roles);
         foreach ($user->roles as $role_key => $role_value) {
-          $roles .= $role_value."<br>";
           foreach ($load_user->roles as $load_user_key => $load_user_value) {
             if (isset($ump_permissions[$role_key]["edit"][$load_user_key])) {
-              $edit = 'user/'.$load_user->uid.'/edit';
+              $edit = l ('Edit', 'user/'.$load_user->uid.'/edit');
             }
             if (isset($ump_permissions[$role_key]["delete"][$load_user_key])) {
-              $delete = 'user/'.$load_user->uid.'/delete';
+              $delete = l ('Delete', 'user/'.$load_user->uid.'/delete');
             }            
           }
         }
@@ -47,7 +53,7 @@ function ump_user_page () {
         $row = array (
           $load_user->name,
           $roles,
-          l ('Edit', $edit) . " " . l ('Delete', $delete),
+          $edit . " " . $delete,
         );
         array_push($table["rows"], $row);
       }      

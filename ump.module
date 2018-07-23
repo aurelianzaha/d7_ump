@@ -153,18 +153,23 @@ function ump_get_user_rules () {
 
 function ump_form_alter (&$form, &$form_state, $form_id) {
   global $user;
-  $user_profile = entity_metadata_wrapper('user', $user->uid);
+  /*$user_profile = entity_metadata_wrapper('user', $user->uid);*/
   $rules = ump_get_user_rules ();
   if ($form_id == "user_register_form") {
-    dsm ($form);
+    //dsm ($form);
     dsm ($form_state);
     $allow_roles = array ();
-    $add_custom_cusbmit = false;
+    $add_custom_submit = true;
     foreach ($rules as $rule) {
       if ($rule["allow_to_create_enable"] == 1) {
         array_push($allow_roles, $rule["allow_to_create_role"]);
         if ($rule["allow_to_create_overtake"] == 1) {
-          $form['#submit'][] = 'ump_user_register_form_submit';
+          if ($add_custom_submit) {
+            $form['#submit'][] = 'ump_user_register_form_submit';
+            $form['#validate'][] = 'ump_user_register_form_validate';
+            $add_custom_submit = false;
+          }
+          
           /*$field_to_overtake = $rule["allow_to_create_overtake_field"];
           $field_value = $user_profile->$field_to_overtake->value();
           $form[$field_to_overtake]['und'][0]['value']['#default_value'] = $field_value;     
@@ -195,6 +200,23 @@ function ump_user_register_form_submit ($form, &$form_state) {
       $new_user->$field_to_overtake->set($field_value);
       $new_user->save();
     }     
+  }
+}
+
+function ump_user_register_form_validate ($form, &$form_state) {
+  $found_valid_role = false;
+  $rules = ump_get_user_rules ();
+  foreach ($rules as $rule) {
+    if ($rule["allow_to_create_enable"] == 1) {
+      if (is_array($form_state["input"]["roles"])) {
+        if (in_array($rule["allow_to_create_role"], $form_state["input"]["roles"])) {
+          $found_valid_role = true;
+        }  
+      }      
+    }
+  }
+  if ($found_valid_role == false) {
+    form_set_error("roles", t("Please select a valid role"));
   }
 }
 
