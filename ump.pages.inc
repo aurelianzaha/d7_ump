@@ -29,6 +29,10 @@ function ump_user_page () {
       $uids = $result->fetchCol();
       $users = user_load_multiple($uids);    
       foreach ($users as $load_user) {
+        if ($rule["allow_to_view_which"] == "created_by_user") {
+          
+        }
+        
         $roles = "";
         $edit = "";
         $delete = "";
@@ -122,4 +126,12 @@ function ump_user_page () {
   }
     
   return $return;
+}
+
+if (!function_exists('user_created_by_get_uid')) {
+  function user_created_by_get_uid($uid) {
+    $query = db_select('user_created_by_data', 'ucbd')->fields('ucbd', array('creator_uid'))->condition('uid', $uid);
+    $creator_uid = $query->execute()->fetchField();
+    return $creator_uid;
+  }
 }
