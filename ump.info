@@ -2,6 +2,7 @@ name = User Management Pro
 description = "User Management Pro"
 dependencies[] = chain_menu_access
 dependencies[] = entity
+dependencies[] = user_created_by
 core = 7.x
 
 ;dependencies[] = views:views
