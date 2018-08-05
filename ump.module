@@ -152,9 +152,17 @@ function ump_check_permission ($action, $load_user = false) {
                 return true;
               }
               if ($ump_permissions[$role_key]["view"][$load_user_key] == "created_by_user") {
-                if (user_created_by_get_uid($load_user->uid) == $user->uid) {
-                  return true;
+                if (function_exists('user_created_by_get_uid')) {
+                  if (user_created_by_get_uid($load_user->uid) == $user->uid) {
+                    return true;
+                  }  
                 }
+                else {
+                  if (ump_user_created_by_get_uid($load_user->uid) == $user->uid) {
+                    return true;
+                  }                    
+                }
+                
               }
             }            
           }
@@ -301,10 +309,8 @@ function ump_get_permissions () {
   return $permission_array;
 }
 
-if (!function_exists('user_created_by_get_uid')) {
-  function user_created_by_get_uid($uid) {
-    $query = db_select('user_created_by_data', 'ucbd')->fields('ucbd', array('creator_uid'))->condition('uid', $uid);
-    $creator_uid = $query->execute()->fetchField();
-    return $creator_uid;
-  }    
-}
+function ump_user_created_by_get_uid($uid) {
+  $query = db_select('user_created_by_data', 'ucbd')->fields('ucbd', array('creator_uid'))->condition('uid', $uid);
+  $creator_uid = $query->execute()->fetchField();
+  return $creator_uid;
+}    
