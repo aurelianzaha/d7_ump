@@ -92,39 +92,27 @@ function ump_menu() {
 /**
  * Implements hook_menu_alter().
  */
-function ump_menu_alter(&$items) {
-  /*$items['admin/people/create']['access callback'] = 'ump_check_permission';
-  $items['admin/people/create']['access arguments'] = array (2);*/
-  /*$items['user/%user']['access callback'] = 'subuser_access_view_callback';
-  $items['user/%user/cancel']['access callback'] = 'subuser_access_delete_callback';
-  $items['user/%user/cancel/confirm/%/%']['access callback'] = 'subuser_access_delete_callback';*/
-  //$items['user/%user/edit']['access callback'] = true;
-  
+function ump_menu_alter(&$items) {  
   chain_menu_access_chain($items, 'admin/people/create', 'ump_check_permission', array('create'), TRUE);
   chain_menu_access_chain($items, 'user/%user/edit', 'ump_check_permission', array('edit', 1), TRUE);
   chain_menu_access_chain($items, 'user/%user/delete', 'ump_check_permission', array('delete', 1), TRUE);
   chain_menu_access_chain($items, 'user/%user', 'ump_check_permission', array('view', 1), TRUE);
 }
 
-function ump_check_permission ($action, $load_user = false) {
+function ump_check_permission ($action, $load_user = false) { 
   global $user;
   if (in_array("administrator", $user->roles)) {
     return true;
   }
   
   if ($action == "create") {
-    $guids = variable_get("user_management_pro_rules");
-    if (is_array($guids)) {
-      foreach ($guids as $guid) {
-        $rule = variable_get("user_management_pro_".$guid);
-        if (isset($user->roles[$rule["select_role"]])) {
-          if ($rule["allow_to_create_enable"] == 1) {
-            ump_temp_administer_users (true);
-            return true;
-          }  
-        }
-      }       
-    }
+    $ump_permissions = ump_get_permissions ();
+    foreach ($user->roles as $role_key => $role_value) {
+      if (isset($ump_permissions[$role_key]["create"])) {
+        ump_temp_administer_users (true);
+        return true;
+      }        
+    }               
     return false;
   }
   
