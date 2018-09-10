@@ -1,42 +1,38 @@
- <?php
+<?php
+
 /**
  * @file
- * User Management Pro
+ * User Management Pro module file.
  */
 
 /**
  * Implements hook_help().
- *
- * Displays help and module information.
- *
- * @param path 
- *   Which path of the site we're using to display help
- * @param arg 
- *   Array that holds the current path as returned from arg() function
  */
 function ump_help($path, $arg) {
+  $return = "";
   switch ($path) {
     case "admin/help#ump":
-      return t("User Management Pro Help"); 
-      break; 
-  }  
+      $return = t("User Management Pro Help");
+      break;
+  }
+  return $return;
 }
 
 /**
  * Implements hook_menu().
  */
-function ump_menu() {  
+function ump_menu() {
   $items = array();
 
   $items['admin/config/ump'] = array(
-      'title' => 'UMP Configuration',
-      'description' => 'Configuration for User Management Pro module',
-      'page callback' => 'system_admin_menu_block_page',
-      'access arguments' => array('access administration pages'),
-      'file' => 'system.admin.inc',
-      'file path' => drupal_get_path('module', 'system'),
-  );  
-  
+    'title' => 'UMP Configuration',
+    'description' => 'Configuration for User Management Pro module',
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('access administration pages'),
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+  );
+
   $items['admin/config/ump/overview'] = array(
     'title' => 'UMP Rules Overview',
     'description' => 'UMP Rules Overview',
@@ -45,7 +41,7 @@ function ump_menu() {
     'type' => MENU_NORMAL_ITEM,
     'file' => 'ump.admin.inc',
   );
-  
+
   $items['admin/config/ump/rule/create'] = array(
     'title' => 'UMP Create Rule',
     'description' => 'UMP Create Rule',
@@ -54,7 +50,7 @@ function ump_menu() {
     'access arguments' => array('access administration pages'),
     'type' => MENU_NORMAL_ITEM,
     'file' => 'ump.admin_forms.inc',
-  );  
+  );
 
   $items['admin/config/ump/rule/edit/%'] = array(
     'title' => 'UMP Edit Rule Configuration',
@@ -64,8 +60,8 @@ function ump_menu() {
     'access arguments' => array('access administration pages'),
     'type' => MENU_NORMAL_ITEM,
     'file' => 'ump.admin_forms.inc',
-  );    
-  
+  );
+
   $items['admin/config/ump/rule/delete/%'] = array(
     'title' => 'UMP Delete Rule Configuration',
     'description' => 'Configuration for User Management Pro module',
@@ -75,107 +71,109 @@ function ump_menu() {
     'type' => MENU_NORMAL_ITEM,
     'file' => 'ump.admin_forms.inc',
   );
-  
+
   $items['user/%user/ump'] = array(
-    'title' => t('User Management Pro'),
+    'title' => 'User Management Pro',
     'page callback' => 'ump_user_page',
     'access callback' => 'user_edit_access',
     'access arguments' => array(1),
     'type' => MENU_LOCAL_TASK,
     'file' => 'ump.pages.inc',
     'weight' => 10,
-  );	  
-  
+  );
+
   return $items;
 }
 
 /**
  * Implements hook_menu_alter().
  */
-function ump_menu_alter(&$items) {  
+function ump_menu_alter(&$items) {
   chain_menu_access_chain($items, 'admin/people/create', 'ump_check_permission', array('create'), TRUE);
   chain_menu_access_chain($items, 'user/%user/edit', 'ump_check_permission', array('edit', 1), TRUE);
   chain_menu_access_chain($items, 'user/%user/delete', 'ump_check_permission', array('delete', 1), TRUE);
   chain_menu_access_chain($items, 'user/%user', 'ump_check_permission', array('view', 1), TRUE);
 }
 
-function ump_check_permission ($action, $load_user = false) { 
+/**
+ * Callback function for permission check.
+ */
+function ump_check_permission($action, $load_user = FALSE) {
   global $user;
   if (in_array("administrator", $user->roles)) {
-    return true;
+    return TRUE;
   }
-  
+
   if ($action == "create") {
-    $ump_permissions = ump_get_permissions ();
+    $ump_permissions = ump_get_permissions();
     foreach ($user->roles as $role_key => $role_value) {
       if (isset($ump_permissions[$role_key]["create"])) {
-        ump_temp_administer_users (true);
-        return true;
-      }        
-    }               
-    return false;
+        ump_temp_administer_users(TRUE);
+        return TRUE;
+      }
+    }
+    return FALSE;
   }
-  
+
   if ($action == "edit") {
-    $ump_permissions = ump_get_permissions ();
+    $ump_permissions = ump_get_permissions();
     if ($load_user) {
-        foreach ($user->roles as $role_key => $role_value) {
-          foreach ($load_user->roles as $load_user_key => $load_user_value) {
-            if (isset($ump_permissions[$role_key]["edit"][$load_user_key])) {
-              return true;
-            }        
+      foreach ($user->roles as $role_key => $role_value) {
+        foreach ($load_user->roles as $load_user_key => $load_user_value) {
+          if (isset($ump_permissions[$role_key]["edit"][$load_user_key])) {
+            return TRUE;
           }
-        }            
+        }
+      }
     }
-    return false;
+    return FALSE;
   }
-  
+
   if ($action == "view") {
-    $ump_permissions = ump_get_permissions ();
+    $ump_permissions = ump_get_permissions();
     if ($load_user) {
-        foreach ($user->roles as $role_key => $role_value) {
-          foreach ($load_user->roles as $load_user_key => $load_user_value) {
-            if (isset($ump_permissions[$role_key]["view"][$load_user_key])) {
-              if ($ump_permissions[$role_key]["view"][$load_user_key] == "all") {
-                return true;
-              }
-              if ($ump_permissions[$role_key]["view"][$load_user_key] == "created_by_user") {
-                if (function_exists('user_created_by_get_uid')) {
-                  if (user_created_by_get_uid($load_user->uid) == $user->uid) {
-                    return true;
-                  }  
+      foreach ($user->roles as $role_key => $role_value) {
+        foreach ($load_user->roles as $load_user_key => $load_user_value) {
+          if (isset($ump_permissions[$role_key]["view"][$load_user_key])) {
+            if ($ump_permissions[$role_key]["view"][$load_user_key] == "all") {
+              return TRUE;
+            }
+            if ($ump_permissions[$role_key]["view"][$load_user_key] == "created_by_user") {
+              if (function_exists('user_created_by_get_uid')) {
+                if (user_created_by_get_uid($load_user->uid) == $user->uid) {
+                  return TRUE;
                 }
-                else {
-                  if (ump_user_created_by_get_uid($load_user->uid) == $user->uid) {
-                    return true;
-                  }                    
-                }
-                
               }
-            }            
+              else {
+                if (ump_user_created_by_get_uid($load_user->uid) == $user->uid) {
+                  return TRUE;
+                }
+              }
+            }
           }
-        }            
+        }
+      }
     }
-    return false;
-  }  
-  
+    return FALSE;
+  }
+
   if ($action == "delete") {
-    $ump_permissions = ump_get_permissions ();
+    $ump_permissions = ump_get_permissions();
     if ($load_user) {
-        foreach ($user->roles as $role_key => $role_value) {
-          foreach ($load_user->roles as $load_user_key => $load_user_value) {
-            if (isset($ump_permissions[$role_key]["delete"][$load_user_key])) {
-              return true;
-            }            
+      foreach ($user->roles as $role_key => $role_value) {
+        foreach ($load_user->roles as $load_user_key => $load_user_value) {
+          if (isset($ump_permissions[$role_key]["delete"][$load_user_key])) {
+            return TRUE;
           }
-        }            
+        }
+      }
     }
-    return false;
-  }    
+    return FALSE;
+  }
 }
 
 /**
- * Temporarily override 'administer users' for the duration or processing this page.
+ * Temporarily override 'administer users'.
  */
 function ump_temp_administer_users($allow) {
   global $user;
@@ -183,31 +181,34 @@ function ump_temp_administer_users($allow) {
   $static[$user->uid]['administer users'] = $allow;
 }
 
-
-function ump_get_user_rules () {
+/**
+ * Helper function to get the UMP rules defined.
+ */
+function ump_get_user_rules() {
   global $user;
-  $rules = array ();
+  $rules = array();
   $guids = variable_get("user_management_pro_rules");
   if (is_array($guids)) {
     foreach ($guids as $guid) {
-      $rule = variable_get("user_management_pro_".$guid);  
+      $rule = variable_get("user_management_pro_" . $guid);
       if (isset($user->roles[$rule["select_role"]])) {
         array_push($rules, $rule);
       }
     }
-  }  
+  }
   return $rules;
 }
 
-function ump_form_alter (&$form, &$form_state, $form_id) {
+/**
+ * Implements hook_form_alter().
+ */
+function ump_form_alter(&$form, &$form_state, $form_id) {
   global $user;
   /*$user_profile = entity_metadata_wrapper('user', $user->uid);*/
-  $rules = ump_get_user_rules ();
+  $rules = ump_get_user_rules();
   if ($form_id == "user_register_form") {
-    //dsm ($form);
-    dsm ($form_state);
-    $allow_roles = array ();
-    $add_custom_submit = true;
+    $allow_roles = array();
+    $add_custom_submit = TRUE;
     foreach ($rules as $rule) {
       if ($rule["allow_to_create_enable"] == 1) {
         array_push($allow_roles, $rule["allow_to_create_role"]);
@@ -215,31 +216,34 @@ function ump_form_alter (&$form, &$form_state, $form_id) {
           if ($add_custom_submit) {
             $form['#submit'][] = 'ump_user_register_form_submit';
             $form['#validate'][] = 'ump_user_register_form_validate';
-            $add_custom_submit = false;
+            $add_custom_submit = FALSE;
           }
-          
+
           /*$field_to_overtake = $rule["allow_to_create_overtake_field"];
           $field_value = $user_profile->$field_to_overtake->value();
-          $form[$field_to_overtake]['und'][0]['value']['#default_value'] = $field_value;     
+          $form[$field_to_overtake]['und'][0]['value']['#default_value'] = $field_value;
           $form[$field_to_overtake]["#disabled"] = true;*/
-        } 
+        }
       }
     }
     if (count($allow_roles) > 0) {
-      $form['account']['roles']["#access"] = true;
+      $form['account']['roles']["#access"] = TRUE;
       foreach ($form['account']['roles']['#options'] as $option_key => $option_value) {
         if (!in_array($option_key, $allow_roles)) {
-          unset ($form['account']['roles']['#options'][$option_key]);
+          unset($form['account']['roles']['#options'][$option_key]);
         }
       }
     }
   }
 }
 
-function ump_user_register_form_submit ($form, &$form_state) {
+/**
+ * UMP submit callback for user_register_form.
+ */
+function ump_user_register_form_submit($form, &$form_state) {
   global $user;
   $user_profile = entity_metadata_wrapper('user', $user->uid);
-  $rules = ump_get_user_rules ();
+  $rules = ump_get_user_rules();
   $new_user = entity_metadata_wrapper('user', $form_state["values"]["uid"]);
   foreach ($rules as $rule) {
     if ($rule["allow_to_create_overtake"] == 1) {
@@ -247,58 +251,67 @@ function ump_user_register_form_submit ($form, &$form_state) {
       $field_value = $user_profile->$field_to_overtake->value();
       $new_user->$field_to_overtake->set($field_value);
       $new_user->save();
-    }     
+    }
   }
 }
 
-function ump_user_register_form_validate ($form, &$form_state) {
-  $found_valid_role = false;
-  $rules = ump_get_user_rules ();
+/**
+ * UMP validate callback for user_register_form.
+ */
+function ump_user_register_form_validate($form, &$form_state) {
+  $found_valid_role = FALSE;
+  $rules = ump_get_user_rules();
   foreach ($rules as $rule) {
     if ($rule["allow_to_create_enable"] == 1) {
       if (is_array($form_state["input"]["roles"])) {
         if (in_array($rule["allow_to_create_role"], $form_state["input"]["roles"])) {
-          $found_valid_role = true;
-        }  
-      }      
+          $found_valid_role = TRUE;
+        }
+      }
     }
   }
-  if ($found_valid_role == false) {
+  if ($found_valid_role == FALSE) {
     form_set_error("roles", t("Please select a valid role"));
   }
 }
 
-function ump_get_permissions () {
-  $permission_array = array ();
+/**
+ * Helper function to return array of defined UMP permissions.
+ */
+function ump_get_permissions() {
+  $permission_array = array();
   $guids = variable_get("user_management_pro_rules");
   foreach ($guids as $guid) {
-    $rule = variable_get("user_management_pro_".$guid);
-    
+    $rule = variable_get("user_management_pro_" . $guid);
+
     if ($rule["allow_to_create_enable"] == 1) {
       $permission_array[$rule["select_role"]]["create"][$rule["allow_to_create_role"]] = 1;
       if ($rule["allow_to_create_overtake"] == 1) {
-        $permission_array[$rule["select_role"]]["create"][$rule["allow_to_create_role"]] = array ("overtake" => $rule["allow_to_create_overtake_field"]);
+        $permission_array[$rule["select_role"]]["create"][$rule["allow_to_create_role"]] = array("overtake" => $rule["allow_to_create_overtake_field"]);
       }
     }
     if ($rule["allow_to_view_enable"] == 1) {
       $permission_array[$rule["select_role"]]["view"][$rule["allow_to_view_role"]]["which"] = $rule["allow_to_view_which"];
-    }      
+    }
     if ($rule["allow_to_edit_enable"] == 1) {
       $permission_array[$rule["select_role"]]["edit"][$rule["allow_to_edit_role"]]["which"] = $rule["allow_to_edit_which"];
       if ($rule["allow_to_edit_which"] == "if_share_common_field") {
         $permission_array[$rule["select_role"]]["edit"][$rule["allow_to_edit_role"]]["common_field"] = $rule["allow_to_edit_common_field"];
       }
-    }      
+    }
     if ($rule["allow_to_delete_enable"] == 1) {
       $permission_array[$rule["select_role"]]["delete"][$rule["allow_to_delete_role"]]["which"] = $rule["allow_to_delete_which"];
-    }         
-  }  
-  
+    }
+  }
+
   return $permission_array;
 }
 
+/**
+ * Helper function ro return creator UID.
+ */
 function ump_user_created_by_get_uid($uid) {
   $query = db_select('user_created_by_data', 'ucbd')->fields('ucbd', array('creator_uid'))->condition('uid', $uid);
   $creator_uid = $query->execute()->fetchField();
   return $creator_uid;
-}    
+}
