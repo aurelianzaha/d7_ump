@@ -6,7 +6,7 @@ dependencies[] = user_created_by
 core = 7.x
 
 ;dependencies[] = views:views
-;files[] = ump.permissions.inc
-configure = admin/config/ump/overvie
+;files[] = ump.helper.inc
+configure = admin/config/ump/overview
 ;stylesheets[all][] = node.css
 ;scripts[] = somescript.js

@@ -5,6 +5,8 @@
  * User Management Pro module file.
  */
 
+require_once dirname(__FILE__) . '/ump.helper.inc';
+
 /**
  * Implements hook_help().
  */
@@ -182,24 +184,6 @@ function ump_temp_administer_users($allow) {
 }
 
 /**
- * Helper function to get the UMP rules defined.
- */
-function ump_get_user_rules() {
-  global $user;
-  $rules = array();
-  $guids = variable_get("user_management_pro_rules");
-  if (is_array($guids)) {
-    foreach ($guids as $guid) {
-      $rule = variable_get("user_management_pro_" . $guid);
-      if (isset($user->roles[$rule["select_role"]])) {
-        array_push($rules, $rule);
-      }
-    }
-  }
-  return $rules;
-}
-
-/**
  * Implements hook_form_alter().
  */
 function ump_form_alter(&$form, &$form_state, $form_id) {
@@ -273,45 +257,4 @@ function ump_user_register_form_validate($form, &$form_state) {
   if ($found_valid_role == FALSE) {
     form_set_error("roles", t("Please select a valid role"));
   }
-}
-
-/**
- * Helper function to return array of defined UMP permissions.
- */
-function ump_get_permissions() {
-  $permission_array = array();
-  $guids = variable_get("user_management_pro_rules");
-  foreach ($guids as $guid) {
-    $rule = variable_get("user_management_pro_" . $guid);
-
-    if ($rule["allow_to_create_enable"] == 1) {
-      $permission_array[$rule["select_role"]]["create"][$rule["allow_to_create_role"]] = 1;
-      if ($rule["allow_to_create_overtake"] == 1) {
-        $permission_array[$rule["select_role"]]["create"][$rule["allow_to_create_role"]] = array("overtake" => $rule["allow_to_create_overtake_field"]);
-      }
-    }
-    if ($rule["allow_to_view_enable"] == 1) {
-      $permission_array[$rule["select_role"]]["view"][$rule["allow_to_view_role"]]["which"] = $rule["allow_to_view_which"];
-    }
-    if ($rule["allow_to_edit_enable"] == 1) {
-      $permission_array[$rule["select_role"]]["edit"][$rule["allow_to_edit_role"]]["which"] = $rule["allow_to_edit_which"];
-      if ($rule["allow_to_edit_which"] == "if_share_common_field") {
-        $permission_array[$rule["select_role"]]["edit"][$rule["allow_to_edit_role"]]["common_field"] = $rule["allow_to_edit_common_field"];
-      }
-    }
-    if ($rule["allow_to_delete_enable"] == 1) {
-      $permission_array[$rule["select_role"]]["delete"][$rule["allow_to_delete_role"]]["which"] = $rule["allow_to_delete_which"];
-    }
-  }
-
-  return $permission_array;
-}
-
-/**
- * Helper function ro return creator UID.
- */
-function ump_user_created_by_get_uid($uid) {
-  $query = db_select('user_created_by_data', 'ucbd')->fields('ucbd', array('creator_uid'))->condition('uid', $uid);
-  $creator_uid = $query->execute()->fetchField();
-  return $creator_uid;
 }
